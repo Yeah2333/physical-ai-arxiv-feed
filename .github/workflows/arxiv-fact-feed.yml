@@ -145,7 +145,7 @@ jobs:
           if [ "$BASE_FEED_COMMIT" = "none" ]; then
             git -C source worktree add --detach ../feed-worktree HEAD
             git -C feed-worktree switch --orphan feed
-            git -C feed-worktree rm -rf .
+            git -C feed-worktree rm -rf --ignore-unmatch .
           else
             git -C source worktree add ../feed-worktree refs/remotes/origin/feed
           fi
