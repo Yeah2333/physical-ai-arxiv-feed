@@ -1,4 +1,4 @@
-"""Public contract primitives for the robotics arXiv fact feed."""
+"""Public contract primitives for the Physical AI arXiv Fact Feed."""
 
 from .contract import (
     CONTRACT_VERSION,

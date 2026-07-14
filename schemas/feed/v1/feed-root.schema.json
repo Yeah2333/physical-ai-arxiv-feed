@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/feed-root.schema.json",
-  "title": "Robotics arXiv Feed root v1",
+  "title": "Physical AI arXiv Fact Feed root v1",
   "type": "object",
   "additionalProperties": false,
   "required": ["contract_version", "feed_root_schema_version", "feed_id", "scopes"],

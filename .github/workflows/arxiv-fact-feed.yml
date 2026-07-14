@@ -172,7 +172,7 @@ jobs:
             echo "No Feed or status change"
             exit 0
           fi
-          git -C feed-worktree config user.name "robotics-arxiv-feed[bot]"
+          git -C feed-worktree config user.name "physical-ai-arxiv-feed[bot]"
           git -C feed-worktree config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git -C feed-worktree commit -m "feed: publish arXiv facts for run $GITHUB_RUN_ID"
           commit=$(git -C feed-worktree rev-parse HEAD)

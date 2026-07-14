@@ -1,7 +1,7 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/partition-manifest.schema.json",
-  "title": "Robotics arXiv Feed partition manifest v1",
+  "title": "Physical AI arXiv Fact Feed partition manifest v1",
   "type": "object",
   "additionalProperties": false,
   "required": [
