@@ -210,6 +210,12 @@ def parse_oai_page(payload: bytes) -> OAIPage:
     response_date = _rfc3339_utc(response_date_text, field="responseDate")
     errors = root.findall(f"{OAI}error")
     if errors:
+        if len(errors) == 1 and errors[0].get("code") == "noRecordsMatch":
+            return OAIPage(
+                response_date=response_date,
+                records=[],
+                resumption_token=None,
+            )
         rendered = ", ".join(f"{item.get('code')}: {(item.text or '').strip()}" for item in errors)
         raise OAIError(f"OAI error response: {rendered}")
     list_records = root.find(f"{OAI}ListRecords")

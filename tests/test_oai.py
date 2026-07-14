@@ -41,6 +41,25 @@ class OAIParserTests(unittest.TestCase):
         with self.assertRaises(OAIError):
             parse_oai_page((FIXTURES / "error.xml").read_bytes())
 
+    def test_no_records_match_is_an_empty_exhausted_page(self) -> None:
+        payload = (FIXTURES / "no-records.xml").read_bytes()
+        page = parse_oai_page(payload)
+        self.assertEqual(page.response_date, "2026-07-14T10:11:35Z")
+        self.assertEqual(page.records, [])
+        self.assertIsNone(page.resumption_token)
+
+        client = OAIClient(
+            user_agent="physical-ai-arxiv-feed/0.1 (+https://example.invalid/contact)",
+            min_interval_seconds=0,
+            opener=lambda request, timeout: payload,
+        )
+        result = client.harvest(
+            source_date="2026-06-14", observed_complete_at="2026-07-14T10:12:00Z"
+        )
+        self.assertEqual(result.records, [])
+        self.assertEqual(result.page_count, 1)
+        self.assertTrue(result.token_exhausted)
+
     def test_client_exhausts_token_and_preserves_query_shape(self) -> None:
         calls: list[dict[str, list[str]]] = []
 
