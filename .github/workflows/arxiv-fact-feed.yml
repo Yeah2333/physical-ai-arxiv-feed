@@ -190,4 +190,4 @@ jobs:
             exit 1
           fi
           git -C source worktree add --detach ../published-feed "$published"
-          python -m arxiv_feed.cli validate --feed-dir ../published-feed
+          PYTHONPATH=source python -m arxiv_feed.cli validate --feed-dir published-feed
