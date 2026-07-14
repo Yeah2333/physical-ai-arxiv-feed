@@ -56,7 +56,7 @@ jobs:
             git -C source archive refs/remotes/origin/feed | tar -x -C prior-feed
             echo "commit=$(git -C source rev-parse refs/remotes/origin/feed)" >> "$GITHUB_OUTPUT"
             git -C source bundle create ../prior-feed.bundle refs/remotes/origin/feed
-            echo "pack_bytes=$(wc -c < ../prior-feed.bundle | tr -d ' ')" >> "$GITHUB_OUTPUT"
+            echo "pack_bytes=$(wc -c < prior-feed.bundle | tr -d ' ')" >> "$GITHUB_OUTPUT"
           else
             echo "commit=none" >> "$GITHUB_OUTPUT"
             echo "pack_bytes=0" >> "$GITHUB_OUTPUT"
