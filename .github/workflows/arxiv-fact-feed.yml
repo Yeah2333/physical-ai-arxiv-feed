@@ -1,0 +1,193 @@
+name: Publish arXiv Fact Feed
+
+on:
+  workflow_dispatch:
+    inputs:
+      full_projection_correction:
+        description: "Publish a reviewed full projection correction (bypasses only the ordinary 7-partition cap)"
+        required: false
+        type: boolean
+        default: false
+      correction_spec_json:
+        description: "Optional reviewed producer-retract JSON spec; leave empty for normal collection"
+        required: false
+        type: string
+        default: ""
+  schedule:
+    - cron: "30 4 * * *"
+
+concurrency:
+  group: arxiv-fact-feed-publish
+  cancel-in-progress: false
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  collect:
+    name: Collect and validate
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout producer code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          path: source
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Run producer tests
+        working-directory: source
+        run: python -m unittest discover -s tests -v
+
+      - name: Materialize the current Feed snapshot
+        id: base
+        run: |
+          mkdir -p prior-feed
+          if git -C source ls-remote --exit-code --heads origin feed >/dev/null 2>&1; then
+            git -C source fetch --no-tags origin feed:refs/remotes/origin/feed
+            git -C source archive refs/remotes/origin/feed | tar -x -C prior-feed
+            echo "commit=$(git -C source rev-parse refs/remotes/origin/feed)" >> "$GITHUB_OUTPUT"
+            git -C source bundle create ../prior-feed.bundle refs/remotes/origin/feed
+            echo "pack_bytes=$(wc -c < ../prior-feed.bundle | tr -d ' ')" >> "$GITHUB_OUTPUT"
+          else
+            echo "commit=none" >> "$GITHUB_OUTPUT"
+            echo "pack_bytes=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Collect OAI facts and assemble staged Feed
+        working-directory: source
+        env:
+          BASE_FEED_COMMIT: ${{ steps.base.outputs.commit }}
+          FULL_PROJECTION_CORRECTION: ${{ inputs.full_projection_correction || 'false' }}
+          CORRECTION_SPEC_JSON: ${{ inputs.correction_spec_json || '' }}
+        run: |
+          correction_args=()
+          if [ "$FULL_PROJECTION_CORRECTION" = "true" ]; then
+            correction_args+=(--full-projection-correction)
+          fi
+          if [ -n "$CORRECTION_SPEC_JSON" ]; then
+            python -c 'import json, os, pathlib; value=json.loads(os.environ["CORRECTION_SPEC_JSON"]); pathlib.Path("../correction-spec.json").write_text(json.dumps(value, ensure_ascii=False, sort_keys=True), encoding="utf-8")'
+            correction_args+=(--correction-file ../correction-spec.json)
+          fi
+          python -m arxiv_feed.cli collect \
+            --input-feed ../prior-feed \
+            --output-feed ../staged-feed \
+            --result-file ../collect-result.json \
+            --base-feed-commit "$BASE_FEED_COMMIT" \
+            --base-reachable-pack-bytes "${{ steps.base.outputs.pack_bytes }}" \
+            --code-sha "$GITHUB_SHA" \
+            --workflow-run-id "$GITHUB_RUN_ID" \
+            --workflow-run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            "${correction_args[@]}"
+
+      - name: Upload validated publish artifact
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: arxiv-feed-${{ github.run_id }}
+          path: |
+            staged-feed
+            collect-result.json
+          if-no-files-found: error
+          retention-days: 2
+
+  publish:
+    name: Publish immutable Feed snapshot
+    needs: collect
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout producer code
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          fetch-depth: 0
+          path: source
+
+      - name: Set up Python
+        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: "3.12"
+
+      - name: Download validated publish artifact
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: arxiv-feed-${{ github.run_id }}
+
+      - name: Verify the publish parent has not changed
+        id: parent
+        run: |
+          artifact_base=$(python -c 'import json; print(json.load(open("collect-result.json"))["base_feed_commit"])')
+          if git -C source ls-remote --exit-code --heads origin feed >/dev/null 2>&1; then
+            git -C source fetch --no-tags origin feed:refs/remotes/origin/feed
+            current_base=$(git -C source rev-parse refs/remotes/origin/feed)
+          else
+            current_base=none
+          fi
+          if [ "$artifact_base" != "$current_base" ]; then
+            echo "Feed head changed after collection; refusing stale publish" >&2
+            exit 1
+          fi
+          echo "commit=$current_base" >> "$GITHUB_OUTPUT"
+
+      - name: Create isolated Feed worktree
+        env:
+          BASE_FEED_COMMIT: ${{ steps.parent.outputs.commit }}
+        run: |
+          if [ "$BASE_FEED_COMMIT" = "none" ]; then
+            git -C source worktree add --detach ../feed-worktree HEAD
+            git -C feed-worktree switch --orphan feed
+            git -C feed-worktree rm -rf .
+          else
+            git -C source worktree add ../feed-worktree refs/remotes/origin/feed
+          fi
+
+      - name: Revalidate and stage the allowlisted tree
+        working-directory: source
+        run: |
+          python -m arxiv_feed.cli sync-publish-tree \
+            --staged-feed ../staged-feed \
+            --feed-worktree ../feed-worktree
+          git -C ../feed-worktree add -- feed.json scopes objects
+          unexpected=$(git -C ../feed-worktree diff --cached --name-only | awk '!/^(feed.json|scopes\/|objects\/)/ {print}')
+          if [ -n "$unexpected" ]; then
+            echo "Unexpected staged path:" >&2
+            echo "$unexpected" >&2
+            exit 1
+          fi
+
+      - name: Commit and push without force
+        id: push
+        run: |
+          if git -C feed-worktree diff --cached --quiet; then
+            echo "commit=${{ steps.parent.outputs.commit }}" >> "$GITHUB_OUTPUT"
+            echo "No Feed or status change"
+            exit 0
+          fi
+          git -C feed-worktree config user.name "robotics-arxiv-feed[bot]"
+          git -C feed-worktree config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C feed-worktree commit -m "feed: publish arXiv facts for run $GITHUB_RUN_ID"
+          commit=$(git -C feed-worktree rev-parse HEAD)
+          git -C feed-worktree push origin HEAD:feed
+          echo "commit=$commit" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch and verify the published remote tree
+        env:
+          EXPECTED_COMMIT: ${{ steps.push.outputs.commit }}
+        run: |
+          git -C source fetch --no-tags origin feed:refs/remotes/origin/feed-published
+          published=$(git -C source rev-parse refs/remotes/origin/feed-published)
+          if [ "$published" != "$EXPECTED_COMMIT" ]; then
+            echo "Remote Feed commit does not match the pushed commit" >&2
+            exit 1
+          fi
+          git -C source worktree add --detach ../published-feed "$published"
+          python -m arxiv_feed.cli validate --feed-dir ../published-feed

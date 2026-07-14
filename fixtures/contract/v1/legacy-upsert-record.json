@@ -1,0 +1,46 @@
+{
+  "operation": "upsert",
+  "logical_record_key": "sha256:4d6084fe216f64d5071f25c7da62a390a9c4af85e25f43ea2421a13d0f318ea1",
+  "oai_identifier": "oai:arXiv.org:hep-th/9901001",
+  "source_datestamp": "1999-01-05",
+  "source_sets": [
+    "physics:hep-th"
+  ],
+  "base_arxiv_id": "hep-th/9901001",
+  "versioned_arxiv_id": "hep-th/9901001v3",
+  "current_version": 3,
+  "version_history": [
+    {
+      "version": 1,
+      "submitted_at": "1999-01-04T12:00:00Z"
+    },
+    {
+      "version": 2,
+      "submitted_at": "1999-01-04T13:00:00Z"
+    },
+    {
+      "version": 3,
+      "submitted_at": "1999-01-05T09:30:00Z"
+    }
+  ],
+  "metadata": {
+    "title": "A Legacy Identifier Fixture",
+    "abstract": "This fixture proves that the contract accepts legacy arXiv identifiers.",
+    "authors_raw": "A. Researcher",
+    "authors": null,
+    "primary_category": null,
+    "categories": [
+      "hep-th"
+    ],
+    "comment": null,
+    "journal_ref": null,
+    "doi": null,
+    "license": null
+  },
+  "field_provenance": {
+    "version_history": "oai_arxiv_raw",
+    "authors_raw": "oai_arxiv_raw",
+    "authors": "oai_arxiv_raw",
+    "primary_category": "oai_arxiv_raw"
+  }
+}

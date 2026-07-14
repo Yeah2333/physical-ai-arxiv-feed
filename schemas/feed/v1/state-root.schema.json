@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/state-root.schema.json",
+  "title": "Robotics arXiv Feed producer-state root v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["state_schema_version", "state_kind", "scope_id", "coverage_end", "shards"],
+  "properties": {
+    "state_schema_version": {"const": "1.0"},
+    "state_kind": {"enum": ["closed_membership", "enrichment_backlog"]},
+    "scope_id": {"type": "string", "minLength": 1},
+    "coverage_end": {"type": ["string", "null"], "format": "date"},
+    "shards": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "prefix",
+          "path",
+          "compressed_size",
+          "compressed_sha256",
+          "uncompressed_size",
+          "uncompressed_sha256",
+          "record_count"
+        ],
+        "properties": {
+          "prefix": {"type": "string", "pattern": "^[0-9a-f]{2}$"},
+          "path": {"type": "string", "minLength": 1},
+          "compressed_size": {"type": "integer", "minimum": 0},
+          "compressed_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "uncompressed_size": {"type": "integer", "minimum": 0},
+          "uncompressed_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+          "record_count": {"type": "integer", "minimum": 0}
+        }
+      }
+    }
+  }
+}

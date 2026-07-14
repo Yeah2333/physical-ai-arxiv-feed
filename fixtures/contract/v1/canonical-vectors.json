@@ -1,0 +1,25 @@
+{
+  "canonical_object": {
+    "input": {
+      "z": 1,
+      "a": "é",
+      "nested": {
+        "b": true,
+        "a": null
+      }
+    },
+    "canonical_json_utf8": "{\"a\":\"é\",\"nested\":{\"a\":null,\"b\":true},\"z\":1}",
+    "exact_file_sha256": "sha256:be6f947af498e50d32e9744384b9b5d3422f83139daa3fabebab3642bbcbc5a5"
+  },
+  "gzip": {
+    "uncompressed_utf8": "one\ntwo\n",
+    "compressed_sha256": "sha256:d4904ec40e7bc7bc9990fde125acca63b7a677ca4111bda671807584519c9d47"
+  },
+  "scope_exact_sha256": "sha256:0122e1492e1fb86f30fc9edc798fbb820ddca18ebe5a1fe109401d647fa855a3",
+  "identities": {
+    "modern_logical_record_key": "sha256:cbfb3517cc1ea9391e6a109bcd4225ff15a30f4ad0b042d7d0fa5589963bc156",
+    "legacy_logical_record_key": "sha256:4d6084fe216f64d5071f25c7da62a390a9c4af85e25f43ea2421a13d0f318ea1",
+    "modern_record_content_sha256": "sha256:660cb1b7169e2d64c98fbe391ee133957903096d9425474233d04a9f4260d20c",
+    "modern_observation_id": "sha256:e8dc0b7e8eb62ce011765c9a38c4e94a1d09af49a21823998e108f65873b8e20"
+  }
+}

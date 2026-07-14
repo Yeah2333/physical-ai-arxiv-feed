@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/enrichment-task.schema.json",
+  "title": "Optional arXiv Search enrichment backlog task v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "task_key",
+    "base_arxiv_id",
+    "target_observation_id",
+    "target_source_date",
+    "target_current_version",
+    "target_material_sha256",
+    "first_enqueued_at",
+    "last_attempt_at",
+    "attempt_count",
+    "status",
+    "next_attempt_date",
+    "last_error_kind",
+    "last_error"
+  ],
+  "properties": {
+    "task_key": {"$ref": "#/$defs/hash"},
+    "base_arxiv_id": {"type": "string", "minLength": 1},
+    "target_observation_id": {"$ref": "#/$defs/hash"},
+    "target_source_date": {"type": "string", "format": "date"},
+    "target_current_version": {"type": "integer", "minimum": 1},
+    "target_material_sha256": {"$ref": "#/$defs/hash"},
+    "first_enqueued_at": {"$ref": "#/$defs/timestamp"},
+    "last_attempt_at": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/timestamp"}]
+    },
+    "attempt_count": {"type": "integer", "minimum": 0},
+    "status": {"enum": ["pending", "deferred"]},
+    "next_attempt_date": {"type": "string", "format": "date"},
+    "last_error_kind": {"type": ["string", "null"], "maxLength": 100},
+    "last_error": {"type": ["string", "null"], "maxLength": 1000}
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "timestamp": {"type": "string", "pattern": "Z$"}
+  }
+}

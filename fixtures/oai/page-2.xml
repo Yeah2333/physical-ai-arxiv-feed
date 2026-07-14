@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/">
+  <responseDate>2026-07-14T05:00:03Z</responseDate>
+  <request verb="ListRecords">https://oaipmh.arxiv.org/oai</request>
+  <ListRecords>
+    <record>
+      <header status="deleted">
+        <identifier>oai:arXiv.org:hep-th/9901001</identifier>
+        <datestamp>2026-07-14</datestamp>
+        <setSpec>physics:hep-th</setSpec>
+      </header>
+    </record>
+    <resumptionToken cursor="1" completeListSize="2"></resumptionToken>
+  </ListRecords>
+</OAI-PMH>

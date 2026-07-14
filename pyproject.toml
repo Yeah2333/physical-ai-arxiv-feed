@@ -1,0 +1,13 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "physical-ai-arxiv-feed"
+version = "0.1.0"
+description = "Deterministic arXiv fact-feed producer contract"
+requires-python = ">=3.10"
+dependencies = []
+
+[tool.setuptools]
+packages = ["arxiv_feed"]

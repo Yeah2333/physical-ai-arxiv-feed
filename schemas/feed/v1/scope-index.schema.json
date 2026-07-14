@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/scope-index.schema.json",
+  "title": "Robotics arXiv Feed scope index v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "index_schema_version",
+    "feed_id",
+    "scope_id",
+    "scope_sha256",
+    "generated_at",
+    "snapshot_kind",
+    "coverage",
+    "partitions",
+    "closed_membership_root",
+    "enrichment_root",
+    "producer",
+    "previous_index_sha256"
+  ],
+  "properties": {
+    "contract_version": {"const": "1.0"},
+    "index_schema_version": {"const": "1.0"},
+    "feed_id": {"const": "physical-ai-arxiv-facts-v1"},
+    "scope_id": {"type": "string", "minLength": 1},
+    "scope_sha256": {"$ref": "#/$defs/hash"},
+    "generated_at": {"type": "string", "pattern": "Z$"},
+    "snapshot_kind": {"enum": ["ordinary", "full_projection_correction"]},
+    "coverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "start_date",
+        "closed_complete_through",
+        "membership_closed_through",
+        "pending_gaps",
+        "provisional_dates"
+      ],
+      "properties": {
+        "start_date": {"type": "string", "format": "date"},
+        "closed_complete_through": {"type": ["string", "null"], "format": "date"},
+        "membership_closed_through": {"type": ["string", "null"], "format": "date"},
+        "pending_gaps": {"type": "array", "items": {"type": "string", "format": "date"}},
+        "provisional_dates": {"type": "array", "items": {"type": "string", "format": "date"}}
+      }
+    },
+    "partitions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["source_date", "manifest_path", "manifest_sha256"],
+        "properties": {
+          "source_date": {"type": "string", "format": "date"},
+          "manifest_path": {"type": "string", "minLength": 1},
+          "manifest_sha256": {"$ref": "#/$defs/hash"}
+        }
+      }
+    },
+    "closed_membership_root": {"$ref": "#/$defs/rootReference"},
+    "enrichment_root": {"$ref": "#/$defs/rootReference"},
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code_sha", "config_sha256", "schema_sha256"],
+      "properties": {
+        "code_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "config_sha256": {"$ref": "#/$defs/hash"},
+        "schema_sha256": {"$ref": "#/$defs/hash"}
+      }
+    },
+    "previous_index_sha256": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "rootReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256"],
+      "properties": {
+        "path": {"type": "string", "minLength": 1},
+        "sha256": {"$ref": "#/$defs/hash"}
+      }
+    }
+  }
+}

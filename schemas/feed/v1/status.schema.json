@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/status.schema.json",
+  "title": "Robotics arXiv Feed status v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "status_schema_version",
+    "feed_id",
+    "scope_id",
+    "last_workflow_success_at",
+    "latest_query_complete_at",
+    "closed_complete_through",
+    "membership_closed_through",
+    "pending_gaps",
+    "provisional_dates",
+    "changed_partitions",
+    "snapshot_kind",
+    "enrichment_backlog_count",
+    "enrichment_oldest_age_hours",
+    "reachable_pack_size_bytes",
+    "estimated_reachable_pack_size_bytes",
+    "capacity_status",
+    "operation_counts",
+    "feed_root_sha256",
+    "index_sha256",
+    "workflow_run_url"
+  ],
+  "properties": {
+    "status_schema_version": {"const": "1.0"},
+    "feed_id": {"const": "physical-ai-arxiv-facts-v1"},
+    "scope_id": {"const": "physical-ai-v1"},
+    "last_workflow_success_at": {"type": "string", "pattern": "Z$"},
+    "latest_query_complete_at": {"type": "string", "pattern": "Z$"},
+    "closed_complete_through": {"type": ["string", "null"], "format": "date"},
+    "membership_closed_through": {"type": ["string", "null"], "format": "date"},
+    "pending_gaps": {"type": "array", "items": {"type": "string", "format": "date"}},
+    "provisional_dates": {"type": "array", "items": {"type": "string", "format": "date"}},
+    "changed_partitions": {"type": "array", "items": {"type": "string", "format": "date"}},
+    "snapshot_kind": {"enum": ["ordinary", "full_projection_correction"]},
+    "enrichment_backlog_count": {"type": "integer", "minimum": 0},
+    "enrichment_oldest_age_hours": {"type": ["number", "null"], "minimum": 0},
+    "reachable_pack_size_bytes": {"type": "integer", "minimum": 0},
+    "estimated_reachable_pack_size_bytes": {"type": "integer", "minimum": 0},
+    "capacity_status": {"enum": ["ok", "warning", "blocked"]},
+    "operation_counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["upsert", "scope_exit", "source_delete", "producer_retract"],
+      "properties": {
+        "upsert": {"type": "integer", "minimum": 0},
+        "scope_exit": {"type": "integer", "minimum": 0},
+        "source_delete": {"type": "integer", "minimum": 0},
+        "producer_retract": {"type": "integer", "minimum": 0}
+      }
+    },
+    "feed_root_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "index_sha256": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "workflow_run_url": {"type": "string", "minLength": 1}
+  }
+}

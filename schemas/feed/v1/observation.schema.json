@@ -1,0 +1,204 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/observation.schema.json",
+  "title": "Robotics arXiv Feed observation v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "record_schema_version",
+    "observation_id",
+    "record_content_sha256",
+    "supersedes_observation_id",
+    "record"
+  ],
+  "properties": {
+    "record_schema_version": {"const": "1.0"},
+    "observation_id": {"$ref": "#/$defs/hash"},
+    "record_content_sha256": {"$ref": "#/$defs/hash"},
+    "supersedes_observation_id": {
+      "oneOf": [{"$ref": "#/$defs/hash"}, {"type": "null"}]
+    },
+    "record": {
+      "oneOf": [
+        {"$ref": "#/$defs/upsertRecord"},
+        {"$ref": "#/$defs/terminalRecord"},
+        {"$ref": "#/$defs/retractRecord"}
+      ]
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "date": {"type": "string", "format": "date"},
+    "timestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T.*Z$"
+    },
+    "stringArray": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "versionHistory": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["version", "submitted_at"],
+        "properties": {
+          "version": {"type": "integer", "minimum": 1},
+          "submitted_at": {"$ref": "#/$defs/timestamp"}
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "abstract",
+        "authors_raw",
+        "authors",
+        "primary_category",
+        "categories",
+        "comment",
+        "journal_ref",
+        "doi",
+        "license"
+      ],
+      "properties": {
+        "title": {"type": ["string", "null"]},
+        "abstract": {"type": ["string", "null"]},
+        "authors_raw": {"type": ["string", "null"]},
+        "authors": {
+          "oneOf": [
+            {"type": "null"},
+            {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["name"],
+                "properties": {"name": {"type": "string", "minLength": 1}}
+              }
+            }
+          ]
+        },
+        "primary_category": {"type": ["string", "null"]},
+        "categories": {"$ref": "#/$defs/stringArray"},
+        "comment": {"type": ["string", "null"]},
+        "journal_ref": {"type": ["string", "null"]},
+        "doi": {"type": ["string", "null"]},
+        "license": {"type": ["string", "null"]}
+      }
+    },
+    "fieldProvenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version_history", "authors_raw", "authors", "primary_category"],
+      "properties": {
+        "version_history": {"const": "oai_arxiv_raw"},
+        "authors_raw": {"const": "oai_arxiv_raw"},
+        "authors": {"enum": ["oai_arxiv_raw", "search_api_optional"]},
+        "primary_category": {"enum": ["oai_arxiv_raw", "search_api_optional"]}
+      }
+    },
+    "upsertRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "logical_record_key",
+        "oai_identifier",
+        "source_datestamp",
+        "source_sets",
+        "base_arxiv_id",
+        "versioned_arxiv_id",
+        "current_version",
+        "version_history",
+        "metadata",
+        "field_provenance"
+      ],
+      "properties": {
+        "operation": {"const": "upsert"},
+        "logical_record_key": {"$ref": "#/$defs/hash"},
+        "oai_identifier": {"type": "string", "pattern": "^oai:arXiv\\.org:.+$"},
+        "source_datestamp": {"$ref": "#/$defs/date"},
+        "source_sets": {"$ref": "#/$defs/stringArray"},
+        "base_arxiv_id": {"type": "string", "minLength": 1},
+        "versioned_arxiv_id": {"type": "string", "pattern": "v[1-9][0-9]*$"},
+        "current_version": {"type": "integer", "minimum": 1},
+        "version_history": {"$ref": "#/$defs/versionHistory"},
+        "metadata": {"$ref": "#/$defs/metadata"},
+        "field_provenance": {"$ref": "#/$defs/fieldProvenance"}
+      }
+    },
+    "terminalRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "logical_record_key",
+        "oai_identifier",
+        "source_datestamp",
+        "source_sets",
+        "base_arxiv_id",
+        "versioned_arxiv_id",
+        "current_version",
+        "version_history",
+        "metadata",
+        "field_provenance"
+      ],
+      "properties": {
+        "operation": {"enum": ["scope_exit", "source_delete"]},
+        "logical_record_key": {"$ref": "#/$defs/hash"},
+        "oai_identifier": {"type": "string", "pattern": "^oai:arXiv\\.org:.+$"},
+        "source_datestamp": {"$ref": "#/$defs/date"},
+        "source_sets": {"$ref": "#/$defs/stringArray"},
+        "base_arxiv_id": {"type": "string", "minLength": 1},
+        "versioned_arxiv_id": {"type": ["string", "null"]},
+        "current_version": {"type": ["integer", "null"], "minimum": 1},
+        "version_history": {
+          "oneOf": [
+            {"type": "null"},
+            {"type": "array", "maxItems": 0}
+          ]
+        },
+        "metadata": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/metadata"}]
+        },
+        "field_provenance": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/fieldProvenance"}]
+        }
+      }
+    },
+    "retractRecord": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "operation",
+        "logical_record_key",
+        "producer_correction_key",
+        "target_observation_id",
+        "target_source_date",
+        "producer_observed_at",
+        "reason_code",
+        "reason",
+        "replacement_observation_id"
+      ],
+      "properties": {
+        "operation": {"const": "producer_retract"},
+        "logical_record_key": {"$ref": "#/$defs/hash"},
+        "producer_correction_key": {"type": "string", "minLength": 1},
+        "target_observation_id": {"$ref": "#/$defs/hash"},
+        "target_source_date": {"$ref": "#/$defs/date"},
+        "producer_observed_at": {"$ref": "#/$defs/timestamp"},
+        "reason_code": {"type": "string", "minLength": 1},
+        "reason": {"type": "string", "minLength": 1, "maxLength": 1000},
+        "replacement_observation_id": {
+          "oneOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]
+        }
+      }
+    }
+  }
+}

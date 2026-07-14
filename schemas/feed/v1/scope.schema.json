@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/scope.schema.json",
+  "title": "Robotics arXiv Feed scope v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "scope_schema_version",
+    "feed_id",
+    "scope_id",
+    "categories",
+    "category_aliases",
+    "include_crosslists",
+    "keywords",
+    "normalizer_version"
+  ],
+  "properties": {
+    "contract_version": {"const": "1.0"},
+    "scope_schema_version": {"const": "1.0"},
+    "feed_id": {"const": "physical-ai-arxiv-facts-v1"},
+    "scope_id": {"const": "physical-ai-v1"},
+    "categories": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {"type": "string", "minLength": 1}
+    },
+    "category_aliases": {
+      "type": "object",
+      "additionalProperties": {"type": "string", "minLength": 1}
+    },
+    "include_crosslists": {"const": true},
+    "keywords": {"const": []},
+    "normalizer_version": {"const": "arxiv-feed-normalizer-v1"}
+  }
+}

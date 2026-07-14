@@ -1,0 +1,162 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Yeah2333/physical-ai-arxiv-feed/schemas/feed/v1/partition-manifest.schema.json",
+  "title": "Robotics arXiv Feed partition manifest v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "manifest_schema_version",
+    "feed_id",
+    "scope_id",
+    "source_date",
+    "partition_state",
+    "projection_base_hash",
+    "projection_result_hash",
+    "query",
+    "counts",
+    "enrichment",
+    "data_parts",
+    "producer",
+    "previous_manifest_sha256"
+  ],
+  "properties": {
+    "contract_version": {"const": "1.0"},
+    "manifest_schema_version": {"const": "1.0"},
+    "feed_id": {"const": "physical-ai-arxiv-facts-v1"},
+    "scope_id": {"type": "string", "minLength": 1},
+    "source_date": {"type": "string", "format": "date"},
+    "partition_state": {"enum": ["provisional", "closed_complete"]},
+    "projection_base_hash": {"$ref": "#/$defs/hash"},
+    "projection_result_hash": {"$ref": "#/$defs/hash"},
+    "query": {"$ref": "#/$defs/query"},
+    "counts": {"$ref": "#/$defs/counts"},
+    "enrichment": {"$ref": "#/$defs/enrichment"},
+    "data_parts": {
+      "type": "array",
+      "items": {"$ref": "#/$defs/dataPart"}
+    },
+    "producer": {"$ref": "#/$defs/producer"},
+    "previous_manifest_sha256": {
+      "oneOf": [{"type": "null"}, {"$ref": "#/$defs/hash"}]
+    }
+  },
+  "$defs": {
+    "hash": {"type": "string", "pattern": "^sha256:[0-9a-f]{64}$"},
+    "timestamp": {"type": "string", "pattern": "Z$"},
+    "nonNegative": {"type": "integer", "minimum": 0},
+    "query": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "from",
+        "until",
+        "metadata_prefix",
+        "set",
+        "first_response_date",
+        "last_response_date",
+        "page_count",
+        "token_exhausted",
+        "source_schema_url",
+        "source_schema_sha256",
+        "observed_complete_at"
+      ],
+      "properties": {
+        "from": {"type": "string", "format": "date"},
+        "until": {"type": "string", "format": "date"},
+        "metadata_prefix": {"const": "arXivRaw"},
+        "set": {"type": "null"},
+        "first_response_date": {"$ref": "#/$defs/timestamp"},
+        "last_response_date": {"$ref": "#/$defs/timestamp"},
+        "page_count": {"type": "integer", "minimum": 1},
+        "token_exhausted": {"const": true},
+        "source_schema_url": {"type": "string", "minLength": 1},
+        "source_schema_sha256": {"$ref": "#/$defs/hash"},
+        "observed_complete_at": {"$ref": "#/$defs/timestamp"}
+      }
+    },
+    "counts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "fresh",
+        "retained",
+        "new",
+        "changed",
+        "superseded",
+        "upsert",
+        "scope_exit",
+        "source_delete",
+        "producer_retract",
+        "fresh_emitted_operation_count",
+        "effective_source_observation_count",
+        "observation_count"
+      ],
+      "properties": {
+        "fresh": {"$ref": "#/$defs/nonNegative"},
+        "retained": {"$ref": "#/$defs/nonNegative"},
+        "new": {"$ref": "#/$defs/nonNegative"},
+        "changed": {"$ref": "#/$defs/nonNegative"},
+        "superseded": {"$ref": "#/$defs/nonNegative"},
+        "upsert": {"$ref": "#/$defs/nonNegative"},
+        "scope_exit": {"$ref": "#/$defs/nonNegative"},
+        "source_delete": {"$ref": "#/$defs/nonNegative"},
+        "producer_retract": {"$ref": "#/$defs/nonNegative"},
+        "fresh_emitted_operation_count": {"$ref": "#/$defs/nonNegative"},
+        "effective_source_observation_count": {"$ref": "#/$defs/nonNegative"},
+        "observation_count": {"$ref": "#/$defs/nonNegative"}
+      }
+    },
+    "enrichment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "succeeded", "failed", "deferred"],
+      "properties": {
+        "status": {"enum": ["not_requested", "complete", "partial"]},
+        "succeeded": {"$ref": "#/$defs/nonNegative"},
+        "failed": {"$ref": "#/$defs/nonNegative"},
+        "deferred": {"$ref": "#/$defs/nonNegative"}
+      }
+    },
+    "dataPart": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ordinal",
+        "path",
+        "compressed_size",
+        "compressed_sha256",
+        "uncompressed_size",
+        "uncompressed_sha256",
+        "record_count"
+      ],
+      "properties": {
+        "ordinal": {"$ref": "#/$defs/nonNegative"},
+        "path": {"type": "string", "minLength": 1},
+        "compressed_size": {"$ref": "#/$defs/nonNegative"},
+        "compressed_sha256": {"$ref": "#/$defs/hash"},
+        "uncompressed_size": {"$ref": "#/$defs/nonNegative"},
+        "uncompressed_sha256": {"$ref": "#/$defs/hash"},
+        "record_count": {"$ref": "#/$defs/nonNegative"}
+      }
+    },
+    "producer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code_sha",
+        "config_sha256",
+        "schema_sha256",
+        "normalizer_version",
+        "workflow_run_id"
+      ],
+      "properties": {
+        "code_sha": {"type": "string", "pattern": "^[0-9a-f]{40}$"},
+        "config_sha256": {"$ref": "#/$defs/hash"},
+        "schema_sha256": {"$ref": "#/$defs/hash"},
+        "normalizer_version": {"const": "arxiv-feed-normalizer-v1"},
+        "workflow_run_id": {"type": "string", "minLength": 1}
+      }
+    }
+  }
+}

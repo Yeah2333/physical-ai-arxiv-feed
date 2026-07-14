@@ -1,0 +1,24 @@
+{
+  "contract_version": "1.0",
+  "scope_schema_version": "1.0",
+  "feed_id": "physical-ai-arxiv-facts-v1",
+  "scope_id": "physical-ai-v1",
+  "categories": [
+    "cs.AI",
+    "cs.CL",
+    "cs.CV",
+    "cs.GR",
+    "cs.HC",
+    "cs.LG",
+    "cs.MA",
+    "cs.RO",
+    "eess.SP",
+    "eess.SY"
+  ],
+  "category_aliases": {
+    "cs.SY": "eess.SY"
+  },
+  "include_crosslists": true,
+  "keywords": [],
+  "normalizer_version": "arxiv-feed-normalizer-v1"
+}

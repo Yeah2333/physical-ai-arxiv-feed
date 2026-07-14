@@ -1,0 +1,51 @@
+{
+  "operation": "upsert",
+  "logical_record_key": "sha256:cbfb3517cc1ea9391e6a109bcd4225ff15a30f4ad0b042d7d0fa5589963bc156",
+  "oai_identifier": "oai:arXiv.org:2607.01234",
+  "source_datestamp": "2026-07-13",
+  "source_sets": [
+    "cs:cs:AI",
+    "cs:cs:RO"
+  ],
+  "base_arxiv_id": "2607.01234",
+  "versioned_arxiv_id": "2607.01234v2",
+  "current_version": 2,
+  "version_history": [
+    {
+      "version": 1,
+      "submitted_at": "2026-07-02T16:12:00Z"
+    },
+    {
+      "version": 2,
+      "submitted_at": "2026-07-12T10:05:00Z"
+    }
+  ],
+  "metadata": {
+    "title": "A Physical AI Policy for Mobile Manipulation",
+    "abstract": "We study a vision-language-action policy.\nIt transfers to a real robot.",
+    "authors_raw": "Alice Example, Bob Example",
+    "authors": [
+      {
+        "name": "Alice Example"
+      },
+      {
+        "name": "Bob Example"
+      }
+    ],
+    "primary_category": "cs.RO",
+    "categories": [
+      "cs.AI",
+      "cs.RO"
+    ],
+    "comment": null,
+    "journal_ref": null,
+    "doi": null,
+    "license": null
+  },
+  "field_provenance": {
+    "version_history": "oai_arxiv_raw",
+    "authors_raw": "oai_arxiv_raw",
+    "authors": "search_api_optional",
+    "primary_category": "search_api_optional"
+  }
+}

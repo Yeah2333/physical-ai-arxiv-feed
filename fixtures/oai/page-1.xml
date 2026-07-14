@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OAI-PMH xmlns="http://www.openarchives.org/OAI/2.0/"
+  xmlns:raw="http://arxiv.org/OAI/arXivRaw/">
+  <responseDate>2026-07-14T05:00:00Z</responseDate>
+  <request verb="ListRecords">https://oaipmh.arxiv.org/oai</request>
+  <ListRecords>
+    <record>
+      <header>
+        <identifier>oai:arXiv.org:2607.01234</identifier>
+        <datestamp>2026-07-14</datestamp>
+        <setSpec>cs:cs:RO</setSpec>
+        <setSpec>cs:cs:AI</setSpec>
+      </header>
+      <metadata>
+        <raw:arXivRaw>
+          <raw:id>2607.01234</raw:id>
+          <raw:submitter>Alice Example</raw:submitter>
+          <raw:version version="v1">
+            <raw:date>Thu, 2 Jul 2026 16:12:00 GMT</raw:date>
+          </raw:version>
+          <raw:version version="v2">
+            <raw:date>Sun, 12 Jul 2026 10:05:00 GMT</raw:date>
+          </raw:version>
+          <raw:title>  A Physical AI Policy
+            for Mobile Manipulation </raw:title>
+          <raw:authors>Alice Example, Bob Example</raw:authors>
+          <raw:categories>cs.RO cs.AI cs.RO</raw:categories>
+          <raw:comments>Real robot evaluation.
+Code will follow.</raw:comments>
+          <raw:abstract>We study a vision-language-action policy.
+It transfers to a real robot.</raw:abstract>
+        </raw:arXivRaw>
+      </metadata>
+    </record>
+    <resumptionToken cursor="0" completeListSize="2">opaque-token</resumptionToken>
+  </ListRecords>
+</OAI-PMH>

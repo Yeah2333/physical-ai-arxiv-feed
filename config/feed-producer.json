@@ -1,0 +1,23 @@
+{
+  "producer_config_schema_version": "1.0",
+  "oai_endpoint": "https://oaipmh.arxiv.org/oai",
+  "metadata_prefix": "arXivRaw",
+  "source_schema_url": "https://oaipmh.arxiv.org/OAI/arXivRaw.xsd",
+  "source_schema_sha256": "sha256:b1f24a0b763c16bd68ac1871fb08cc8f3eb70e859469bdabbce92fa3e2616d85",
+  "bootstrap_days": 31,
+  "max_changed_partitions": 7,
+  "max_gap_closures": 5,
+  "recent_overlap_partitions": 2,
+  "max_retries": 4,
+  "request_interval_seconds": 3,
+  "max_reachable_pack_bytes": 786432000,
+  "warning_reachable_pack_bytes": 524288000,
+  "search_enrichment": {
+    "enabled": false,
+    "endpoint": "https://export.arxiv.org/api/query",
+    "max_per_run": 20,
+    "batch_size": 20,
+    "max_retries": 3,
+    "request_interval_seconds": 3
+  }
+}
