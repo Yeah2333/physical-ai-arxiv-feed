@@ -8,7 +8,9 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
+import unicodedata
 import xml.etree.ElementTree as ET
+from collections import Counter
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from typing import Callable, Iterator
@@ -29,6 +31,28 @@ MAX_XML_RESPONSE_BYTES = 25 * 1024 * 1024
 
 class OAIError(RuntimeError):
     """An upstream, pagination, or source-schema failure."""
+
+
+@dataclass(frozen=True)
+class SourceTextRepair:
+    """An XML-valid source control replaced before contract normalization."""
+
+    oai_identifier: str
+    source_datestamp: str
+    field: str
+    code_point: str
+    count: int
+    replacement: str = "U+0020"
+
+    def as_dict(self) -> dict[str, object]:
+        return {
+            "oai_identifier": self.oai_identifier,
+            "source_datestamp": self.source_datestamp,
+            "field": self.field,
+            "code_point": self.code_point,
+            "count": self.count,
+            "replacement": self.replacement,
+        }
 
 
 @dataclass(frozen=True)
@@ -155,16 +179,18 @@ def _parse_raw(header: ET.Element, metadata: ET.Element | None) -> RawRecord:
     categories_text = _text(raw, f"{RAW}categories", required=True) or ""
     categories = normalize_categories(categories_text.split())
     metadata_value: dict[str, object] = {
-        "title": _nullable_source(raw, f"{RAW}title"),
-        "abstract": _nullable_source(raw, f"{RAW}abstract", multiline=True),
-        "authors_raw": _nullable_source(raw, f"{RAW}authors"),
+        # Keep source text untouched here. Projection can reject records that
+        # never entered scope before contract normalization touches free text.
+        "title": _source_value(raw, f"{RAW}title"),
+        "abstract": _source_value(raw, f"{RAW}abstract"),
+        "authors_raw": _source_value(raw, f"{RAW}authors"),
         "authors": None,
         "primary_category": None,
         "categories": categories,
-        "comment": _nullable_source(raw, f"{RAW}comments", multiline=True),
-        "journal_ref": _nullable_source(raw, f"{RAW}journal-ref"),
-        "doi": _nullable_source(raw, f"{RAW}doi"),
-        "license": _nullable_source(raw, f"{RAW}license"),
+        "comment": _source_value(raw, f"{RAW}comments"),
+        "journal_ref": _source_value(raw, f"{RAW}journal-ref"),
+        "doi": _source_value(raw, f"{RAW}doi"),
+        "license": _source_value(raw, f"{RAW}license"),
     }
     return RawRecord(
         oai_identifier=identifier,
@@ -185,12 +211,77 @@ def _parse_raw(header: ET.Element, metadata: ET.Element | None) -> RawRecord:
     )
 
 
-def _nullable_source(parent: ET.Element, tag: str, *, multiline: bool = False) -> str | None:
+def _source_value(parent: ET.Element, tag: str) -> str | None:
     value = _text(parent, tag)
-    if value is None:
-        return None
-    normalized = normalize_multiline(value) if multiline else normalize_single_line(value)
-    return normalized or None
+    return value
+
+
+def _sanitize_source_controls(value: str) -> tuple[str, Counter[int]]:
+    """Replace XML-valid Cc source noise without weakening Feed validation."""
+
+    repaired: list[str] = []
+    counts: Counter[int] = Counter()
+    for char in value:
+        if unicodedata.category(char) == "Cc" and char not in {"\t", "\n", "\r"}:
+            repaired.append(" ")
+            counts[ord(char)] += 1
+        else:
+            repaired.append(char)
+    return "".join(repaired), counts
+
+
+def normalize_record_text(record: RawRecord) -> tuple[RawRecord, list[SourceTextRepair]]:
+    """Normalize a projected record and report deterministic source repairs."""
+
+    if record.deleted:
+        return record, []
+    if record.metadata is None:
+        raise OAIError("non-deleted record has no metadata")
+    metadata = dict(record.metadata)
+    repairs: list[SourceTextRepair] = []
+    for field, multiline in (
+        ("title", False),
+        ("abstract", True),
+        ("authors_raw", False),
+        ("comment", True),
+        ("journal_ref", False),
+        ("doi", False),
+        ("license", False),
+    ):
+        value = metadata[field]
+        if value is None:
+            continue
+        if not isinstance(value, str):
+            raise OAIError(f"source field {field} must be text")
+        sanitized, counts = _sanitize_source_controls(value)
+        normalized = (
+            normalize_multiline(sanitized)
+            if multiline
+            else normalize_single_line(sanitized)
+        )
+        metadata[field] = normalized or None
+        repairs.extend(
+            SourceTextRepair(
+                oai_identifier=record.oai_identifier,
+                source_datestamp=record.source_datestamp,
+                field=field,
+                code_point=f"U+{code_point:04X}",
+                count=count,
+            )
+            for code_point, count in sorted(counts.items())
+        )
+    return RawRecord(
+        oai_identifier=record.oai_identifier,
+        source_datestamp=record.source_datestamp,
+        source_sets=record.source_sets,
+        deleted=record.deleted,
+        base_arxiv_id=record.base_arxiv_id,
+        versioned_arxiv_id=record.versioned_arxiv_id,
+        current_version=record.current_version,
+        version_history=record.version_history,
+        metadata=metadata,
+        field_provenance=record.field_provenance,
+    ), repairs
 
 
 def parse_oai_page(payload: bytes) -> OAIPage:
