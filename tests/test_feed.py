@@ -96,6 +96,27 @@ class FeedSnapshotTests(unittest.TestCase):
             self.assertEqual(validate_snapshot(feed_root).closed_complete_through, "2026-07-14")
             self.assertEqual(validate_snapshot(feed_root).provisional_dates, ["2026-07-15"])
 
+    def test_source_text_repair_reaches_collection_result(self) -> None:
+        metadata = dict(self.raw.metadata)
+        metadata["abstract"] = "A robot Schr\x7fodinger policy."
+        repaired_raw = replace(self.raw, metadata=metadata)
+        with tempfile.TemporaryDirectory() as directory:
+            result = SnapshotBuilder(
+                root=Path(directory), scope=self.scope, producer=self.producer
+            ).build(
+                today_utc=date(2026, 7, 15),
+                generated_at="2026-07-15T05:00:00Z",
+                coverage_start=date(2026, 7, 14),
+                harvests={
+                    "2026-07-14": harvest(
+                        repaired_raw, "2026-07-14", "2026-07-15T04:58:00Z"
+                    )
+                },
+            )
+        self.assertEqual(len(result.source_text_repairs), 1)
+        self.assertEqual(result.source_text_repairs[0]["code_point"], "U+007F")
+        self.assertEqual(result.source_text_repairs[0]["field"], "abstract")
+
     def test_hash_tampering_is_rejected(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             feed_root = Path(directory)

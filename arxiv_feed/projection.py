@@ -8,7 +8,7 @@ from typing import Any, Iterable, Mapping
 from .canonical import canonicalize_categories
 from .contract import build_observation, validate_observation
 from .identity import logical_record_key, record_content_sha256
-from .oai import RawRecord
+from .oai import RawRecord, SourceTextRepair, normalize_record_text
 
 
 class ProjectionError(ValueError):
@@ -45,6 +45,7 @@ class ProjectionResult:
     heads: dict[str, Head]
     ignored_count: int
     unchanged_count: int
+    source_text_repairs: list[SourceTextRepair]
 
 
 def _in_scope(categories: Iterable[str], scope: Mapping[str, Any]) -> bool:
@@ -99,6 +100,7 @@ def project_records(
     observations: list[dict[str, Any]] = []
     ignored = 0
     unchanged = 0
+    source_text_repairs: list[SourceTextRepair] = []
     for raw in sorted(records, key=lambda item: item.oai_identifier):
         key = logical_record_key(raw.oai_identifier)
         membership = next_memberships.get(
@@ -123,6 +125,9 @@ def project_records(
             ignored += 1
             continue
 
+        if operation != "source_delete":
+            raw, repairs = normalize_record_text(raw)
+            source_text_repairs.extend(repairs)
         record = record_for_operation(raw, operation=operation)
         content_hash = record_content_sha256(record)
         current_head = next_heads.get(key)
@@ -155,6 +160,7 @@ def project_records(
         heads=next_heads,
         ignored_count=ignored,
         unchanged_count=unchanged,
+        source_text_repairs=source_text_repairs,
     )
 
 

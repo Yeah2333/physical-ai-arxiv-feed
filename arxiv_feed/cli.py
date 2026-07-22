@@ -326,14 +326,21 @@ def collect(args: argparse.Namespace) -> int:
         status,
     )
     artifact = {
-        "artifact_schema_version": "1.0",
+        "artifact_schema_version": "1.1",
         "base_feed_commit": args.base_feed_commit,
         "feed_root_sha256": result.feed_root_sha256,
         "index_sha256": result.index_sha256,
         "changed_partitions": result.changed_partitions,
         "snapshot_kind": status["snapshot_kind"],
         "generated_at": generated_at,
+        "source_text_repairs": list(result.source_text_repairs),
     }
+    for repair in result.source_text_repairs:
+        print(
+            "source-text-repair: "
+            + json.dumps(repair, ensure_ascii=False, sort_keys=True),
+            file=sys.stderr,
+        )
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_bytes(canonical_file_bytes(artifact))
     print(json.dumps(artifact, ensure_ascii=False, sort_keys=True))

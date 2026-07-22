@@ -4,7 +4,7 @@ import urllib.parse
 import unittest
 from pathlib import Path
 
-from arxiv_feed.oai import OAIClient, OAIError, parse_oai_page
+from arxiv_feed.oai import OAIClient, OAIError, normalize_record_text, parse_oai_page
 
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "oai"
@@ -27,9 +27,22 @@ class OAIParserTests(unittest.TestCase):
         self.assertEqual(record.base_arxiv_id, "2607.01234")
         self.assertEqual(record.versioned_arxiv_id, "2607.01234v2")
         self.assertEqual(record.source_sets, ["cs:cs:AI", "cs:cs:RO"])
-        self.assertEqual(record.metadata["title"], "A Physical AI Policy for Mobile Manipulation")
+        self.assertIn("\n", record.metadata["title"])
         self.assertEqual(record.metadata["categories"], ["cs.AI", "cs.RO"])
         self.assertEqual(record.metadata["primary_category"], None)
+        normalized, repairs = normalize_record_text(record)
+        self.assertEqual(
+            normalized.metadata["title"],
+            "A Physical AI Policy for Mobile Manipulation",
+        )
+        self.assertEqual(repairs, [])
+
+    def test_xml_valid_source_control_is_deferred_until_projection(self) -> None:
+        payload = (FIXTURES / "page-1.xml").read_bytes().replace(
+            b"vision-language-action", b"Schr\x7fodinger"
+        )
+        record = parse_oai_page(payload).records[0]
+        self.assertIn("\x7f", record.metadata["abstract"])
 
     def test_parse_deleted_header(self) -> None:
         page = parse_oai_page((FIXTURES / "page-2.xml").read_bytes())

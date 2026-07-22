@@ -34,11 +34,12 @@ class EnrichmentTests(unittest.TestCase):
             memberships={},
             heads={},
         ).observations[0]
+        metadata = cls.observation["record"]["metadata"]
         cls.search_record = SearchRecord(
             base_arxiv_id=cls.raw.base_arxiv_id,
             version=cls.raw.current_version,
-            title=cls.raw.metadata["title"],
-            abstract=cls.raw.metadata["abstract"],
+            title=metadata["title"],
+            abstract=metadata["abstract"],
             authors=[{"name": "Alice Example"}, {"name": "Bob Example"}],
             primary_category="cs.RO",
         )
@@ -48,8 +49,8 @@ class EnrichmentTests(unittest.TestCase):
         <feed xmlns='http://www.w3.org/2005/Atom' xmlns:arxiv='http://arxiv.org/schemas/atom'>
           <entry>
             <id>https://arxiv.org/abs/{self.raw.base_arxiv_id}v{self.raw.current_version}</id>
-            <title>{self.raw.metadata['title']}</title>
-            <summary>{self.raw.metadata['abstract']}</summary>
+            <title>{self.search_record.title}</title>
+            <summary>{self.search_record.abstract}</summary>
             <author><name>Alice Example</name></author>
             <author><name>Bob Example</name></author>
             <arxiv:primary_category term='cs.RO'/>

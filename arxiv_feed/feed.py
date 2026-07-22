@@ -67,6 +67,7 @@ class BuiltSnapshot:
     changed_partitions: list[str]
     enrichment_backlog_count: int = 0
     enrichment_oldest_age_hours: float | None = None
+    source_text_repairs: tuple[dict[str, object], ...] = ()
 
 
 def _load_json(path: Path, *, canonical: bool = True) -> dict[str, Any]:
@@ -1091,6 +1092,7 @@ class SnapshotBuilder:
         references: dict[str, dict[str, Any]] = {}
         reference_manifests: dict[str, dict[str, Any]] = {}
         changed_partitions: list[str] = []
+        source_text_repairs: list[dict[str, object]] = []
         cascading_rechain = False
         closed_history: list[dict[str, Any]] = []
         prior_root_ref, _ = write_state_root(
@@ -1122,6 +1124,9 @@ class SnapshotBuilder:
                     heads=existing_heads,
                 )
                 fresh = projected.observations
+                source_text_repairs.extend(
+                    repair.as_dict() for repair in projected.source_text_repairs
+                )
             fresh, enrichment_summary = _apply_partition_enrichment(
                 scope_id=self.scope_id,
                 source_date=source_date,
@@ -1219,6 +1224,9 @@ class SnapshotBuilder:
                     heads=provisional_heads,
                 )
                 fresh = projected.observations
+                source_text_repairs.extend(
+                    repair.as_dict() for repair in projected.source_text_repairs
+                )
             fresh, enrichment_summary = _apply_partition_enrichment(
                 scope_id=self.scope_id,
                 source_date=current_date,
@@ -1329,6 +1337,7 @@ class SnapshotBuilder:
                 changed_partitions=[],
                 enrichment_backlog_count=len(enrichment_tasks),
                 enrichment_oldest_age_hours=oldest_enrichment_age,
+                source_text_repairs=tuple(source_text_repairs),
             )
         previous_index_sha = None
         if previous_index is not None:
@@ -1376,6 +1385,7 @@ class SnapshotBuilder:
             changed_partitions=sorted(changed_partitions),
             enrichment_backlog_count=len(enrichment_tasks),
             enrichment_oldest_age_hours=oldest_enrichment_age,
+            source_text_repairs=tuple(source_text_repairs),
         )
 
     def _manifest_producer(self) -> dict[str, str]:

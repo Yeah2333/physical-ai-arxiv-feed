@@ -20,12 +20,14 @@ The planner is gap-first:
 
 - Bootstrap queries up to five oldest missing UTC datestamps within the configured 31-day window.
 - Steady state rechecks the previous and current UTC datestamps so a provisional partition is never promoted merely because time passed.
-- Pagination is exhausted through OAI resumption tokens. An OAI error, malformed record or incomplete page fails the run.
+- Pagination is exhausted through OAI resumption tokens. An OAI error, malformed structural record or incomplete page fails the run.
 - `closed_complete_through` advances only over a contiguous prefix of successfully requeried partitions. The current date remains provisional.
 
 The initial 31-day bootstrap is intentionally bounded to five oldest gaps per run. It therefore needs repeated scheduled or manual runs before reaching steady state; status exposes the remaining gaps, and consumers must not count bootstrap days as current-day shadow evidence until the frontier has caught up.
 
 An OAI upsert is projected only while its canonical categories intersect the scope. Later category exit emits `scope_exit`; OAI deleted headers emit `source_delete` for previously known in-scope identities. A record that never entered scope is not published.
+
+The source adapter parses identity, version and categories before normalizing free text. Free text from a record that never entered scope is therefore unable to block the scoped Feed. For projected records, XML-valid control characters forbidden by the Feed contract are deterministically replaced with ASCII space before normalization; every replacement is reported with record id, source datestamp, field, code point and count in the collection log and short-lived publish artifact. The final Feed validator remains strict and still rejects control characters.
 
 ## Identity and operation model
 

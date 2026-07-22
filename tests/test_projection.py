@@ -89,6 +89,45 @@ class ProjectionTests(unittest.TestCase):
         self.assertEqual(result.observations, [])
         self.assertEqual(result.ignored_count, 1)
 
+    def test_out_of_scope_control_text_cannot_block_projection(self) -> None:
+        metadata = dict(self.raw.metadata)
+        metadata["categories"] = ["math.AP", "math.OC"]
+        metadata["abstract"] = "A 1D Schr\x7fodinger equation."
+        result = project_records(
+            scope=self.scope,
+            records=[replace(self.raw, metadata=metadata)],
+            memberships={},
+            heads={},
+        )
+        self.assertEqual(result.observations, [])
+        self.assertEqual(result.ignored_count, 1)
+        self.assertEqual(result.source_text_repairs, [])
+
+    def test_in_scope_control_text_is_repaired_and_audited(self) -> None:
+        metadata = dict(self.raw.metadata)
+        metadata["abstract"] = "A robot Schr\x7fodinger policy."
+        result = project_records(
+            scope=self.scope,
+            records=[replace(self.raw, metadata=metadata)],
+            memberships={},
+            heads={},
+        )
+        self.assertEqual(
+            result.observations[0]["record"]["metadata"]["abstract"],
+            "A robot Schr odinger policy.",
+        )
+        self.assertEqual(
+            [repair.as_dict() for repair in result.source_text_repairs],
+            [{
+                "oai_identifier": self.raw.oai_identifier,
+                "source_datestamp": self.raw.source_datestamp,
+                "field": "abstract",
+                "code_point": "U+007F",
+                "count": 1,
+                "replacement": "U+0020",
+            }],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
