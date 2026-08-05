@@ -14,7 +14,7 @@ on:
         type: string
         default: ""
   schedule:
-    - cron: "30 4 * * *"
+    - cron: "30 0 * * *"
 
 concurrency:
   group: arxiv-fact-feed-publish
@@ -28,7 +28,7 @@ jobs:
   collect:
     name: Collect and validate
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 90
     permissions:
       contents: read
     steps:
@@ -63,6 +63,7 @@ jobs:
           fi
 
       - name: Collect OAI facts and assemble staged Feed
+        timeout-minutes: 80
         working-directory: source
         env:
           BASE_FEED_COMMIT: ${{ steps.base.outputs.commit }}
@@ -86,9 +87,11 @@ jobs:
             --code-sha "$GITHUB_SHA" \
             --workflow-run-id "$GITHUB_RUN_ID" \
             --workflow-run-url "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" \
+            --progress-file ../collect-progress.jsonl \
             "${correction_args[@]}"
 
       - name: Upload validated publish artifact
+        if: success()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: arxiv-feed-${{ github.run_id }}
@@ -97,6 +100,15 @@ jobs:
             collect-result.json
           if-no-files-found: error
           retention-days: 2
+
+      - name: Upload collection diagnostics
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: arxiv-feed-diagnostics-${{ github.run_id }}
+          path: collect-progress.jsonl
+          if-no-files-found: warn
+          retention-days: 7
 
   publish:
     name: Publish immutable Feed snapshot

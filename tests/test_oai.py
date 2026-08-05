@@ -4,7 +4,7 @@ import urllib.parse
 import unittest
 from pathlib import Path
 
-from arxiv_feed.oai import OAIClient, OAIError, normalize_record_text, parse_oai_page
+from arxiv_feed.oai import OAIClient, OAIError, OAIPageProgress, normalize_record_text, parse_oai_page
 
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "oai"
@@ -75,6 +75,7 @@ class OAIParserTests(unittest.TestCase):
 
     def test_client_exhausts_token_and_preserves_query_shape(self) -> None:
         calls: list[dict[str, list[str]]] = []
+        progress: list[OAIPageProgress] = []
 
         def opener(request, timeout):
             query = urllib.parse.parse_qs(urllib.parse.urlsplit(request.full_url).query)
@@ -89,7 +90,9 @@ class OAIParserTests(unittest.TestCase):
             opener=opener,
         )
         result = client.harvest(
-            source_date="2026-07-14", observed_complete_at="2026-07-14T05:01:00Z"
+            source_date="2026-07-14",
+            observed_complete_at="2026-07-14T05:01:00Z",
+            on_page=progress.append,
         )
         self.assertEqual(result.page_count, 2)
         self.assertTrue(result.token_exhausted)
@@ -97,6 +100,13 @@ class OAIParserTests(unittest.TestCase):
         self.assertEqual(calls[0]["metadataPrefix"], ["arXivRaw"])
         self.assertEqual(calls[0]["from"], ["2026-07-14"])
         self.assertEqual(calls[1], {"verb": ["ListRecords"], "resumptionToken": ["opaque-token"]})
+        self.assertEqual(
+            progress,
+            [
+                OAIPageProgress("2026-07-14", 1, 1, False),
+                OAIPageProgress("2026-07-14", 2, 1, True),
+            ],
+        )
 
 
 if __name__ == "__main__":
