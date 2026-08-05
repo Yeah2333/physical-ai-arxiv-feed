@@ -77,6 +77,14 @@ class OAIPage:
 
 
 @dataclass(frozen=True)
+class OAIPageProgress:
+    source_date: str
+    page_number: int
+    record_count: int
+    token_exhausted: bool
+
+
+@dataclass(frozen=True)
 class HarvestResult:
     records: list[RawRecord]
     first_response_date: str
@@ -402,8 +410,25 @@ class OAIClient:
             seen_tokens.add(token)
             parameters = {"verb": "ListRecords", "resumptionToken": token}
 
-    def harvest(self, *, source_date: str, observed_complete_at: str | None = None) -> HarvestResult:
-        pages = list(self.pages(source_date=source_date))
+    def harvest(
+        self,
+        *,
+        source_date: str,
+        observed_complete_at: str | None = None,
+        on_page: Callable[[OAIPageProgress], None] | None = None,
+    ) -> HarvestResult:
+        pages: list[OAIPage] = []
+        for page_number, page in enumerate(self.pages(source_date=source_date), start=1):
+            pages.append(page)
+            if on_page is not None:
+                on_page(
+                    OAIPageProgress(
+                        source_date=source_date,
+                        page_number=page_number,
+                        record_count=len(page.records),
+                        token_exhausted=page.resumption_token is None,
+                    )
+                )
         if not pages:
             raise OAIError("OAI pagination produced no pages")
         records = [record for page in pages for record in page.records]

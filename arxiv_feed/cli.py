@@ -23,7 +23,7 @@ from .feed import (
     load_state_records,
     validate_snapshot,
 )
-from .oai import OAIClient
+from .oai import OAIClient, OAIPageProgress
 from .planner import plan_collection
 from .writer import write_canonical_file
 
@@ -40,6 +40,23 @@ def _read_json(path: Path) -> dict[str, Any]:
 
 def _utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z")
+
+
+def _append_progress(path: str | None, event: str, **fields: Any) -> None:
+    if not path:
+        return
+    destination = Path(path).resolve()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "progress_schema_version": "1.0",
+        "event": event,
+        "timestamp": _utc_now(),
+        **fields,
+    }
+    with destination.open("a", encoding="utf-8") as stream:
+        stream.write(json.dumps(payload, ensure_ascii=False, sort_keys=True) + "\n")
+        stream.flush()
+        os.fsync(stream.fileno())
 
 
 def _previous_index(feed_dir: Path) -> dict[str, Any] | None:
@@ -162,13 +179,41 @@ def collect(args: argparse.Namespace) -> int:
         )
     today = date.fromisoformat(args.today) if args.today else datetime.now(timezone.utc).date()
     plan = plan_collection(today_utc=today, producer_config=config, previous_index=previous)
+    _append_progress(
+        args.progress_file,
+        "collection_started",
+        today=today.isoformat(),
+        source_dates=plan.source_dates,
+    )
     client = OAIClient(
         endpoint=config["oai_endpoint"],
         user_agent=args.user_agent,
         max_attempts=config["max_retries"],
         min_interval_seconds=float(config["request_interval_seconds"]),
     )
-    harvests = {source_date: client.harvest(source_date=source_date) for source_date in plan.source_dates}
+    harvests = {}
+    for source_date in plan.source_dates:
+        _append_progress(args.progress_file, "source_date_started", source_date=source_date)
+
+        def on_page(progress: OAIPageProgress) -> None:
+            _append_progress(
+                args.progress_file,
+                "page_received",
+                source_date=progress.source_date,
+                page_number=progress.page_number,
+                record_count=progress.record_count,
+                token_exhausted=progress.token_exhausted,
+            )
+
+        harvest = client.harvest(source_date=source_date, on_page=on_page)
+        harvests[source_date] = harvest
+        _append_progress(
+            args.progress_file,
+            "source_date_completed",
+            source_date=source_date,
+            page_count=harvest.page_count,
+            record_count=len(harvest.records),
+        )
     generated_at = _utc_now()
     enrichment_config = config.get("search_enrichment") or {}
     enrichment_enabled = bool(enrichment_config.get("enabled", False))
@@ -343,6 +388,12 @@ def collect(args: argparse.Namespace) -> int:
         )
     result_path.parent.mkdir(parents=True, exist_ok=True)
     result_path.write_bytes(canonical_file_bytes(artifact))
+    _append_progress(
+        args.progress_file,
+        "collection_succeeded",
+        changed_partitions=result.changed_partitions,
+        snapshot_kind=status["snapshot_kind"],
+    )
     print(json.dumps(artifact, ensure_ascii=False, sort_keys=True))
     return 0
 
@@ -378,6 +429,7 @@ def build_parser() -> argparse.ArgumentParser:
     collect_parser.add_argument("--code-sha", required=True)
     collect_parser.add_argument("--workflow-run-id", required=True)
     collect_parser.add_argument("--workflow-run-url", required=True)
+    collect_parser.add_argument("--progress-file")
     collect_parser.add_argument("--today")
     collect_parser.add_argument("--full-projection-correction", action="store_true")
     collect_parser.add_argument(
@@ -407,6 +459,12 @@ def main(argv: list[str] | None = None) -> int:
     try:
         return int(args.function(args))
     except Exception as exc:
+        if args.command == "collect":
+            _append_progress(
+                getattr(args, "progress_file", None),
+                "collection_failed",
+                error_type=type(exc).__name__,
+            )
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

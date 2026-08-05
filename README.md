@@ -31,7 +31,7 @@ Raw `cs.SY` source metadata is retained and aliases to `eess.SY` only for scope 
 - `main`: producer code, pinned scope/config, strict JSON Schemas, fixtures, tests and GitHub workflow.
 - `feed`: generated `feed.json`, scope index, immutable gzip objects, producer state and status. No hand-authored research output belongs here.
 
-The workflow runs daily at `04:30 UTC`. Collection is read-only. A separate least-privilege publish job checks that the selected parent is unchanged, stages only `feed.json`, `scopes/` and `objects/`, pushes without force, then fetches and revalidates the remote commit.
+The workflow runs daily at `00:30 UTC`, leaving room for GitHub schedule delay and bounded OAI collection before the Shanghai 13:00 consumer cycle. Collection is read-only and records metadata-only JSONL progress for timeout diagnosis. The collect step is bounded at 80 minutes inside a 90-minute job. A separate least-privilege publish job checks that the selected parent is unchanged, stages only `feed.json`, `scopes/` and `objects/`, pushes without force, then fetches and revalidates the remote commit.
 
 ## Local validation
 
@@ -50,6 +50,7 @@ python3 -m arxiv_feed.cli collect \
   --input-feed /path/to/prior-feed \
   --output-feed /tmp/staged-feed \
   --result-file /tmp/collect-result.json \
+  --progress-file /tmp/collect-progress.jsonl \
   --base-feed-commit <commit-or-none> \
   --code-sha <producer-code-sha> \
   --workflow-run-id local \
