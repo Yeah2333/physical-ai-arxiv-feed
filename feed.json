@@ -1,1 +1,1 @@
-{"contract_version":"1.0","feed_id":"physical-ai-arxiv-facts-v1","feed_root_schema_version":"1.0","scopes":[{"index_path":"scopes/physical-ai-v1/index.json","index_sha256":"sha256:04b51b51fd3b384ef0b2f9043286342a7454c28432e6c989972bc84201b2f82a","scope_id":"physical-ai-v1"}]}
+{"contract_version":"1.0","feed_id":"physical-ai-arxiv-facts-v1","feed_root_schema_version":"1.0","scopes":[{"index_path":"scopes/physical-ai-v1/index.json","index_sha256":"sha256:4d52851c39aed61fefac530a9c7ca1b9b620ff157a29834461d2fe015c67478e","scope_id":"physical-ai-v1"}]}
